@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BISE Multan Result Extractor</title>
+<style>
+:root{--bg1:#dbeafe;--bg2:#ede9fe;--glass:rgba(255,255,255,.55);--bd:rgba(255,255,255,.7);--tx:#0f172a;--mu:#475569;--ac:#4f46e5}
+@media(prefers-color-scheme:dark){:root{--bg1:#0f172a;--bg2:#1e1b4b;--glass:rgba(30,41,59,.55);--bd:rgba(148,163,184,.25);--tx:#f1f5f9;--mu:#94a3b8;--ac:#818cf8}}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif;color:var(--tx);background:linear-gradient(135deg,var(--bg1),var(--bg2));min-height:100vh;padding:16px}
+.w{max-width:1000px;margin:auto;display:grid;gap:14px}
+.g{background:var(--glass);border:1px solid var(--bd);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:16px;padding:16px}
+h1{font-size:1.3rem;margin:0}h2{font-size:1rem;margin:0 0 10px}p,small{color:var(--mu)}
+button,input,select{font:inherit;padding:9px 13px;border-radius:10px;border:1px solid var(--bd);background:var(--glass);color:var(--tx)}
+button{cursor:pointer;background:var(--ac);color:#fff;border:0}button.s{background:var(--glass);color:var(--tx);border:1px solid var(--bd)}button:disabled{opacity:.5}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.k{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px}.k div{padding:10px;border-radius:12px;background:var(--glass);border:1px solid var(--bd)}.k b{display:block;font-size:1.4rem}
+.bar{height:10px;border-radius:9px;background:var(--glass);overflow:hidden}.bar i{display:block;height:100%;width:0;background:var(--ac);transition:width .4s}
+.tabs button{background:var(--glass);color:var(--tx);border:1px solid var(--bd)}.tabs button.on{background:var(--ac);color:#fff}.t{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:.85rem}th,td{padding:6px 8px;text-align:left;border-bottom:1px solid var(--bd);white-space:nowrap}
+pre{max-height:150px;overflow:auto;font-size:.75rem;margin:0}a{color:var(--ac)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style></head><body><div class="w">
+<div class="g"><h1>BISE Multan Result Extractor</h1><p>Rankings are among the uploaded roll numbers only, not the whole board. Ties share a rank (1,2,2,4).</p></div>
+<div class="g"><h2>1. Upload and settings</h2><div class="row">
+<input type="file" id="f" aria-label="Roll number file">
+<label>Max per hour <input id="rt" type="number" value="360" min="1" max="360" step="1" style="width:100px"></label>
+<label title="Extra pause before the next tab opens">Extra delay (ms) <input id="d" type="number" value="0" min="0" step="100" style="width:90px"></label>
+<label>Active tabs <input id="c" type="number" value="1" min="1" max="1" style="width:70px"></label>
+<label>Retries <input id="r" type="number" value="1" min="1" max="1" style="width:70px" title="Timed-out lookups are skipped rather than retried"></label>
+<label>Fetch gazette marks from <input id="mm" type="number" min="0" placeholder="min" style="width:80px"></label>
+<label>to <input id="xm" type="number" min="0" placeholder="max" style="width:80px"></label>
+<label><input type="checkbox" id="on"> Only rolls with a numeric gazette result</label><button id="go" disabled>Start</button></div><p><small>Default: at most 360 requests/hour (one start every 10 seconds), one active lookup, and a 10-second timeout. A slow lookup is closed and marked failed before the next roll is started in a fresh tab. A 403/429/503 response stops the job immediately. The client keeps one fixed, identifiable user agent; no IP/proxy rotation. Use automated lookups only with the board's permission. A CAPTCHA or other access challenge may mean automated access is not permitted.</small></p><p id="pv"><small>No file chosen.</small></p><p id="warn" style="color:#dc2626"></p></div>
+<div class="g"><h2>Saved lists</h2><p><small>Results are saved on disk. Re-uploading a processed list makes no new requests.</small></p><div class="row"><select id="ls" style="min-width:220px"></select><button class="s" id="vw">View</button><button class="s" id="dx">Delete</button></div></div>
+<div class="g"><h2>2. Progress</h2><div class="k" id="k"></div><div class="bar" style="margin:10px 0"><i id="b"></i></div>
+<p id="st"></p><div class="row"><button class="s" id="pa">Pause</button><button class="s" id="re">Resume</button><button class="s" id="ca">Cancel</button></div><pre id="lg"></pre></div>
+<div class="g"><h2>Groups</h2><div class="k" id="gc" style="grid-template-columns:repeat(auto-fit,minmax(230px,1fr))"></div></div>
+<div class="g"><h2>3. Results</h2><p><a href="/report" target="_blank" rel="noopener"><b>Open full results page (HTML)</b></a> &middot; <a href="/groupcheck" target="_blank" rel="noopener">Group check</a> <small>- searchable rankings with subject-wise marks; also available as a download below.</small></p><div class="row tabs" id="tabs" role="tablist" style="margin-bottom:10px"></div><div class="row" style="margin-bottom:10px"><select id="sc" aria-label="College"><option value="">All colleges</option></select><select id="sd" aria-label="District"><option value="">All districts</option></select><select id="sy" aria-label="City"><option value="">All cities</option></select><input id="vmin" type="number" placeholder="Min marks" style="width:135px"><input id="vmax" type="number" placeholder="Max marks" style="width:135px"></div>
+<div class="row"><input id="q" placeholder="Search roll, name, group, school" style="flex:1"><button class="s" id="pp">Prev</button><span id="pg">1</span><button class="s" id="pn">Next</button></div>
+<div class="t"><table><thead><tr><th>Rank (in tab)</th><th>Roll</th><th>Name</th><th>Group</th><th>Marks</th><th>%</th><th>Result</th><th>Status</th><th>Note</th></tr></thead><tbody id="tb"></tbody></table></div></div>
+<div class="g"><h2>4. Downloads</h2><div class="row" id="dl"></div></div>
+</div><script>
+var fname='',text='',page=1,grp='All',$=function(i){return document.getElementById(i)};
+function post(u,b){return fetch(u,{method:'POST',body:JSON.stringify(b||{})}).then(function(r){return r.json()})}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function fmt(s){return s==null?'estimating':Math.floor(s/60)+'m '+(s%60)+'s'}
+$('f').onchange=function(e){var f=e.target.files[0];if(!f)return;fname=f.name;$('pv').textContent='Reading '+f.name+'...';var fr=new FileReader();
+fr.onerror=function(){$('pv').textContent='Could not read the file. Try again.'};
+fr.onload=function(){text=fr.result;$('pv').textContent='Loaded '+f.name+' ('+Math.round(f.size/1024)+' KB). Checking...';$('go').disabled=false;
+post('/api/preview',{text:text,minMarks:$('mm').value,maxMarks:$('xm').value}).then(function(p){$('pv').textContent=f.name+': '+p.valid+' valid, '+p.invalid+' invalid, '+p.dup+' duplicates removed'+(p.numeric?' ('+p.numeric+' with numeric gazette result)':'')+(p.atLeast!=null?' | '+p.atLeast+' in the marks range':'');$('go').disabled=!p.valid})
+.catch(function(){$('pv').textContent=location.protocol==='file:'?'Open http://localhost:3000 in the browser. Do not open ui.html directly.':'Cannot reach the server. Is it running (npm start)? Refresh this page.'})};fr.readAsText(f)};
+function pvw(){if(!text)return;post('/api/preview',{text:text,minMarks:$('mm').value,maxMarks:$('xm').value}).then(function(p){$('pv').textContent=fname+': '+p.valid+' valid, '+p.invalid+' invalid, '+p.dup+' duplicates removed'+(p.numeric?' ('+p.numeric+' with numeric gazette result)':'')+(p.atLeast!=null?' | '+p.atLeast+' in the marks range':'');$('go').disabled=!p.valid}).catch(function(){})}
+$('mm').oninput=pvw;$('xm').oninput=pvw;
+$('go').onclick=function(){$('warn').textContent='';$('go').disabled=true;$('pv').textContent='Starting...';
+post('/api/start',{name:fname,onlyNumeric:$('on').checked,minMarks:$('mm').value,maxMarks:$('xm').value,text:text,delay:$('d').value,conc:$('c').value,rate:$('rt').value,retries:$('r').value}).then(function(r){
+if(r.error){$('warn').textContent=r.error;$('pv').textContent='Not started.';alert(r.error)}
+else if(r.cached){$('pv').textContent='All results were already saved. Showing them without new requests.';alert('All results were already saved. Showing them without new requests.')}
+else $('pv').textContent='Started: '+r.valid+' roll numbers queued. Watch the Progress section below.';
+lists();tabs();rows();status()}).catch(function(){$('warn').textContent='Could not reach the server. Is it running (npm start)? Refresh this page.';$('pv').textContent='Not started.'}).then(function(){$('go').disabled=false})};
+['pause','resume','cancel'].forEach(function(a){$(a.slice(0,2)).onclick=function(){post('/api/'+a)}});
+$('q').oninput=function(){page=1;rows()};$('pp').onclick=function(){if(page>1){page--;rows()}};$('pn').onclick=function(){page++;rows()};
+function status(){fetch('/api/status').then(function(r){return r.json()}).then(function(s){
+var d=s.total-s.remaining;
+$('k').innerHTML=[['Total',s.total],['Retrieved',s.ok],['Not found',s.notfound],['Failed',s.failed],['Remaining',s.remaining],['Invalid',s.invalid]].map(function(x){return'<div><small>'+x[0]+'</small><b>'+x[1]+'</b></div>'}).join('');
+$('b').style.width=(s.total?d/s.total*100:0)+'%';
+$('st').textContent='State: '+s.state+(s.current?' | Current: '+s.current:'')+' | Progress: '+(s.total?Math.round(d/s.total*100):0)+'% | Elapsed: '+fmt(s.elapsed)+' | Remaining (estimate): '+fmt(s.eta);
+$('lg').textContent=s.log.join('\n')})}
+function rows(){fetch('/api/results?group='+encodeURIComponent(grp)+'&college='+encodeURIComponent($('sc').value)+'&district='+encodeURIComponent($('sd').value)+'&city='+encodeURIComponent($('sy').value)+'&minM='+$('vmin').value+'&maxM='+$('vmax').value+'&page='+page+'&q='+encodeURIComponent($('q').value)).then(function(r){return r.json()}).then(function(d){$('pg').textContent=page+' / '+Math.max(1,Math.ceil(d.n/50));
+$('tb').innerHTML=d.rows.map(function(r){return'<tr>'+[r.rank,r.roll,r.name,r.group,r.marks,r.percentage,r.result,r.status,r.note].map(function(v){return'<td>'+esc(v)+'</td>'}).join('')+'</tr>'}).join('')})}
+function tabs(){fetch('/api/groups').then(function(r){return r.json()}).then(function(c){$('tabs').innerHTML=Object.keys(c).map(function(k){return'<button role="tab" aria-selected="'+(k===grp)+'" class="'+(k===grp?'on':'')+'" data-g="'+esc(k)+'">'+esc(k)+' ('+c[k]+')</button>'}).join('');
+[].forEach.call($('tabs').children,function(b){b.onclick=function(){grp=b.getAttribute('data-g');page=1;tabs();rows()}})})}
+function lists(){fetch('/api/lists').then(function(r){return r.json()}).then(function(a){var v=$('ls').value;$('ls').innerHTML=a.length?a.map(function(l){return'<option value="'+l.id+'">'+esc(l.name)+' ('+l.done+'/'+l.count+' saved, '+l.created.slice(0,10)+')</option>'}).join(''):'<option value="">No saved lists</option>';if(v)$('ls').value=v})}
+$('vw').onclick=function(){post('/api/view',{id:$('ls').value}).then(function(r){if(r.error)alert(r.error);grp='All';page=1;tabs();rows();status()})};
+$('dx').onclick=function(){if($('ls').value&&confirm('Delete this saved list? Fetched results stay stored.'))post('/api/deletelist',{id:$('ls').value}).then(function(){lists();rows();tabs();status()})};
+function summary(){fetch('/api/summary').then(function(r){return r.json()}).then(function(a){$('gc').innerHTML=a.map(function(g){return'<div><b style="font-size:1rem">'+esc(g.group)+'</b><small>'+g.count+' student'+(g.count===1?'':'s')+(g.count?' | highest '+g.highest+' | avg '+g.average:'')+'</small><ol style="margin:6px 0;padding-left:18px;font-size:.85rem">'+(g.top.map(function(t){return'<li>'+esc(t.name)+' ('+esc(t.roll)+') - '+t.marks+'</li>'}).join('')||'<li>No data yet</li>')+'</ol><button class="s" data-g="'+esc(g.group)+'">View all</button> <a href="/download/'+g.file+'">CSV</a></div>'}).join('');
+[].forEach.call($('gc').querySelectorAll('button'),function(b){b.onclick=function(){grp=b.getAttribute('data-g');page=1;tabs();rows();$('tabs').scrollIntoView()}})})}
+function opts(){fetch('/api/colleges').then(function(r){return r.json()}).then(function(a){var v=$('sc').value;$('sc').innerHTML='<option value="">All colleges</option>'+a.map(function(c){return'<option value="'+esc(c.code)+'">'+esc(c.code+' - '+c.name)+' ('+c.count+')</option>'}).join('');$('sc').value=v});
+fetch('/api/districts').then(function(r){return r.json()}).then(function(a){var v=$('sd').value;$('sd').innerHTML='<option value="">All districts (Multan board)</option>'+a.map(function(d){return'<option value="'+esc(d.district)+'">'+(d.district==='none'?'District not identifiable':esc(d.district)+' district')+' ('+d.count+')</option>'}).join('');$('sd').value=v});
+fetch('/api/cities').then(function(r){return r.json()}).then(function(a){var v=$('sy').value,by={};a.forEach(function(c){(by[c.district]=by[c.district]||[]).push(c)});$('sy').innerHTML='<option value="">All cities and towns</option>'+Object.keys(by).map(function(d){return'<optgroup label="'+esc(d==='Other'?'Other':d+' district')+'">'+by[d].map(function(c){return'<option value="'+esc(c.city)+'">'+esc(c.city)+' ('+c.count+')</option>'}).join('')+'</optgroup>'}).join('');$('sy').value=v})}
+['sc','sd','sy'].forEach(function(i){$(i).onchange=function(){page=1;rows()}});['vmin','vmax'].forEach(function(i){$(i).oninput=function(){page=1;rows()}});
+function files(){fetch('/api/files').then(function(r){return r.json()}).then(function(f){$('dl').innerHTML=f.map(function(n){return'<a href="/download/'+encodeURIComponent(n)+'">'+esc(n)+'</a>'}).join(' · ')})}
+if(location.protocol==='file:')$('warn').textContent='This page was opened as a file. Run npm start and open http://localhost:3000 instead.';setInterval(status,1500);setInterval(rows,5000);setInterval(tabs,5000);tabs();opts();setInterval(opts,10000);summary();setInterval(summary,5000);lists();setInterval(lists,10000);setInterval(files,8000);status();rows();files();
+</script></body></html>

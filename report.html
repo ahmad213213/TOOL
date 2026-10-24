@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BISE Multan Results</title>
+<style>
+:root{--bg1:#dbeafe;--bg2:#ede9fe;--glass:rgba(255,255,255,.65);--bd:rgba(100,116,139,.3);--tx:#0f172a;--mu:#475569;--ac:#4f46e5;--ok:#15803d;--bad:#b91c1c}
+@media(prefers-color-scheme:dark){:root{--bg1:#0f172a;--bg2:#1e1b4b;--glass:rgba(30,41,59,.65);--bd:rgba(148,163,184,.25);--tx:#f1f5f9;--mu:#94a3b8;--ac:#818cf8;--ok:#4ade80;--bad:#f87171}}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,sans-serif;color:var(--tx);background:linear-gradient(135deg,var(--bg1),var(--bg2));min-height:100vh;padding:16px}
+.w{max-width:1100px;margin:auto;display:grid;gap:14px}
+.g{background:var(--glass);border:1px solid var(--bd);border-radius:16px;padding:16px}
+h1{font-size:1.3rem;margin:0 0 4px}h2{font-size:1rem;margin:0 0 10px}p,small{color:var(--mu);margin:4px 0}
+button,input,select{font:inherit;padding:8px 12px;border-radius:10px;border:1px solid var(--bd);background:var(--glass);color:var(--tx)}
+button{cursor:pointer}button.on{background:var(--ac);color:#fff;border-color:var(--ac)}button:disabled{opacity:.5;cursor:default}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.k{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px}.k>div{padding:10px;border-radius:12px;background:var(--glass);border:1px solid var(--bd)}
+.k b{display:block}.k ol{margin:6px 0 0;padding-left:18px;font-size:.85rem}
+.t{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:.85rem}
+th,td{padding:6px 8px;text-align:left;border-bottom:1px solid var(--bd);white-space:nowrap}
+tr.m{cursor:pointer}tr.m:hover td{background:var(--glass)}tr.d td{white-space:normal;background:var(--glass)}
+.pass{color:var(--ok)}.fail{color:var(--bad)}
+.sub{margin:6px 0 0;width:auto;min-width:320px}
+@media print{body{background:#fff;color:#000;padding:0}.g{border:0;background:none}.noprint{display:none}}
+</style></head><body><div class="w">
+<div class="g"><h1>BISE Multan Results</h1><p id="meta"></p>
+<p><small>Rankings are among the roll numbers in this report only, not the whole board. Ties share a rank (1,2,2,4). Click a row to see subject-wise marks.</small></p></div>
+<div class="g"><h2>Groups</h2><div class="k" id="gc"></div></div>
+<div class="g"><h2>Results</h2>
+<div class="row" id="tabs" role="tablist" style="margin-bottom:10px"></div>
+<div class="row noprint" style="margin-bottom:10px">
+<select id="sd" aria-label="District"></select>
+<select id="sc" aria-label="College"></select>
+<input id="mn" type="number" placeholder="Min marks" style="width:135px">
+<input id="mx" type="number" placeholder="Max marks" style="width:135px">
+<input id="q" placeholder="Search roll, name, father, group, school" style="flex:1;min-width:200px">
+<button id="pr">Print</button></div>
+<p id="cnt"></p>
+<div class="t"><table><thead><tr><th>Rank</th><th>Roll</th><th>Name</th><th>Father</th><th>College</th><th>Group</th><th>Marks</th><th>%</th><th>Result</th></tr></thead><tbody id="tb"></tbody></table></div>
+<div class="row noprint" style="margin-top:10px"><button id="pp">Prev</button><span id="pg">1</span><button id="pn">Next</button></div>
+</div></div>
+<script>
+var D=__DATA__;
+var PAGE=50,S={g:'All',dist:'',col:'',q:'',mn:'',mx:'',p:1,open:null,view:[]};
+function $(i){return document.getElementById(i)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function ranked(list){var s=list.slice().sort(function(a,b){return b.marks-a.marks}),prev=null,pos=0;
+return s.map(function(r,i){if(r.marks!==prev){pos=i+1;prev=r.marks}return{rank:pos,r:r}})}
+var groups=D.groups.slice();
+function inGroup(g){return g==='All'?D.students:D.students.filter(function(r){return r.group===g})}
+// ---- header + group cards
+$('meta').textContent='Generated '+D.generated.slice(0,16).replace('T',' ')+' UTC | '+D.students.length+' results retrieved'+(D.unavailable.length?' | '+D.unavailable.length+' unavailable':'');
+$('gc').innerHTML=groups.map(function(g){var rk=ranked(inGroup(g)),n=rk.length,sum=0;rk.forEach(function(x){sum+=x.r.marks});
+return'<div><b>'+esc(g)+'</b><small>'+n+' student'+(n===1?'':'s')+(n?' | highest '+rk[0].r.marks+' | avg '+(sum/n).toFixed(1):'')+'</small><ol>'+
+(rk.slice(0,3).map(function(x){return'<li>'+esc(x.r.name)+' ('+esc(x.r.roll)+') - '+x.r.marks+'</li>'}).join('')||'<li>No data</li>')+'</ol></div>'}).join('');
+$('sd').innerHTML='<option value="">All districts (Multan board)</option>'+D.districts.map(function(d){return'<option value="'+esc(d)+'">'+esc(d)+' district</option>'}).join('')+'<option value="none">District not identifiable</option>';
+// ---- college picker
+var cm={};D.students.forEach(function(r){if(r.school_code&&!cm[r.school_code])cm[r.school_code]=(r.institute||'').replace(/^\d+\s*-\s*/,'').slice(0,70)});
+$('sc').innerHTML='<option value="">All colleges</option>'+Object.keys(cm).sort().map(function(c){return'<option value="'+esc(c)+'">'+esc(c+' - '+cm[c])+'</option>'}).join('');
+// ---- tabs
+function tabs(){var names=['All'].concat(groups);if(D.unavailable.length)names.push('Unavailable');
+$('tabs').innerHTML=names.map(function(g){var n=g==='Unavailable'?D.unavailable.length:inGroup(g).length;
+return'<button role="tab" aria-selected="'+(g===S.g)+'" class="'+(g===S.g?'on':'')+'" data-g="'+esc(g)+'">'+esc(g)+' ('+n+')</button>'}).join('');
+[].forEach.call($('tabs').children,function(b){b.onclick=function(){S.g=b.getAttribute('data-g');S.p=1;S.open=null;tabs();draw()}})}
+// ---- table
+function detail(r){if(S.g==='Unavailable')return'<b>Status:</b> '+esc(r.status)+(r.note?' | '+esc(r.note):'');
+var h='<b>'+esc(r.name)+'</b> | Father: '+esc(r.father||'-')+' | '+esc(r.institute||'-')+(r.note?'<br><small>'+esc(r.note)+'</small>':'');
+h+='<table class="sub"><thead><tr><th>Subject</th><th>Theory</th><th>Practical</th><th>Percentile</th><th>Grade</th><th>Status</th></tr></thead><tbody>'+
+(r.subjects||[]).map(function(s){return'<tr><td>'+esc(s[0])+'</td><td>'+esc(s[1])+'</td><td>'+esc(s[2]==null?'':s[2])+'</td><td>'+esc(s[3])+'</td><td>'+esc(s[4]||'')+'</td><td>'+esc(s[5]||'')+'</td></tr>'}).join('')+'</tbody></table>';return h}
+function draw(){var rows,unav=S.g==='Unavailable';
+if(unav)rows=D.unavailable.map(function(r){return{rank:'',r:r}});
+else{var pool=inGroup(S.g);if(S.col)pool=pool.filter(function(r){return r.school_code===S.col});if(S.dist)pool=pool.filter(function(r){return r.district===S.dist});rows=ranked(pool);
+if(S.mn!=='')rows=rows.filter(function(x){return x.r.marks>=+S.mn});if(S.mx!=='')rows=rows.filter(function(x){return x.r.marks<=+S.mx})}
+var t=S.q.toLowerCase();if(t)rows=rows.filter(function(x){return[x.r.roll,x.r.name,x.r.father,x.r.group,x.r.status,x.r.school_code].join(' ').toLowerCase().indexOf(t)>-1});
+var pages=Math.max(1,Math.ceil(rows.length/PAGE));if(S.p>pages)S.p=pages;S.view=rows.slice((S.p-1)*PAGE,S.p*PAGE);
+$('cnt').textContent=rows.length+' result'+(rows.length===1?'':'s')+(S.col?' (rank is within the selected college)':'')+(S.dist?' (rank is within the selected district)':'');
+$('pg').textContent=S.p+' / '+pages;$('pp').disabled=S.p<=1;$('pn').disabled=S.p>=pages;
+$('tb').innerHTML=S.view.map(function(x,i){var r=x.r,res=unav?r.status:r.result,cls=/^pass$/i.test(res)?'pass':/fail|absent/i.test(res)?'fail':'';
+var m='<tr class="m" data-i="'+i+'"><td>'+esc(x.rank)+'</td><td>'+esc(r.roll)+'</td><td>'+esc(r.name)+'</td><td>'+esc(r.father)+'</td><td>'+esc(r.school_code)+'</td><td>'+esc(r.group)+'</td><td>'+esc(r.marks)+'</td><td>'+esc(r.percentage)+'</td><td class="'+cls+'">'+esc(res)+'</td></tr>';
+return m+(S.open===r.roll?'<tr class="d"><td colspan="9">'+detail(r)+'</td></tr>':'')}).join('')||'<tr><td colspan="9">No results match.</td></tr>'}
+$('tb').onclick=function(e){var tr=e.target.closest('tr.m');if(!tr)return;var r=S.view[+tr.getAttribute('data-i')].r;S.open=S.open===r.roll?null:r.roll;draw()};
+$('sd').onchange=function(){S.dist=$('sd').value;S.p=1;S.open=null;draw()};
+$('sc').onchange=function(){S.col=$('sc').value;S.p=1;S.open=null;draw()};
+$('mn').oninput=function(){S.mn=$('mn').value;S.p=1;draw()};$('mx').oninput=function(){S.mx=$('mx').value;S.p=1;draw()};
+$('q').oninput=function(){S.q=$('q').value;S.p=1;draw()};
+$('pp').onclick=function(){if(S.p>1){S.p--;draw()}};$('pn').onclick=function(){S.p++;draw()};$('pr').onclick=function(){window.print()};
+tabs();draw();
+</script></body></html>

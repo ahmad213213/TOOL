@@ -1,0 +1,16 @@
+{
+  "name": "bise-multan-extractor",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "build": "npx playwright install --with-deps chromium",
+    "start": "node server.js",
+    "start:headed": "node server.js --headed",
+    "test": "node test.js",
+    "test:e2e": "node test-e2e.js",
+    "test:headed": "node test-headed.js"
+  },
+  "dependencies": { "exceljs": "^4.4.0", "playwright": "^1.48.0" }
+}
